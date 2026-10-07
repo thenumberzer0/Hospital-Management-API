@@ -45,10 +45,11 @@ class Appointments(Base):
     id: Mapped[PYUUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     patient_id: Mapped[PYUUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id", ondelete="RESTRICT"))
     day_time: Mapped[datetime]
-    doctor_id: Mapped[PYUUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("workers.id", ondelete="SET NULL"), nullable=True)
+    notes:Mapped[str]
+    worker_id: Mapped[PYUUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("workers.id", ondelete="SET NULL"), nullable=True)
 
     patients: Mapped["Patients"] = relationship(back_populates="appointments")
-    doctor: Mapped["Workers"] = relationship(back_populates="appointments")
+    worker: Mapped["Workers"] = relationship(back_populates="appointments")
 
 
 class Insurance(Base):
@@ -92,7 +93,7 @@ class Workers(Base):
     location_id:Mapped[PYUUID] = mapped_column(ForeignKey("locations.id"))
 
     location:Mapped["Location"] = relationship(back_populates="workers")
-    appointments: Mapped[list["Appointments"]] = relationship(back_populates="doctor")
+    appointments: Mapped[list["Appointments"]] = relationship(back_populates="worker")
     schedule: Mapped[list["Schedule"]] = relationship(back_populates="worker")
     vitals: Mapped[list["Vitals"]] = relationship(back_populates="worker")
     records: Mapped[list["Record"]] = relationship(back_populates="worker")
@@ -190,7 +191,7 @@ class Location(Base):
     id: Mapped[PYUUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     location_name:Mapped[str]
 
-    inventory:Mapped[list["Batches"]] = relationship(back_populates="location")
+    inventory:Mapped[list["Inventory"]] = relationship(back_populates="location")
     workers:Mapped[list["Workers"]] = relationship(back_populates="location")
 
 class Supplier(Base):
@@ -234,7 +235,6 @@ class Inventory(Base):
     location:Mapped[Location] = relationship(back_populates="inventory")
     usage: Mapped[list["DrugsUsed"]] = relationship(back_populates="inventory")
     usage_other: Mapped[list["OtherDrugHistory"]] = relationship(back_populates="inventory")
-    transfer_history :Mapped[list["DrugTransferHistory"]] = relationship(back_populates="inventory")
     __table_args__ = (
         CheckConstraint("quantity>=0", name="check_retail_quantity"),
         UniqueConstraint("location_id","batch_id",name="no_double_batch_loc")
@@ -271,5 +271,4 @@ class DrugTransferHistory(Base):
     date:Mapped[datetime]
 
     batch:Mapped[Batches] = relationship(back_populates="transfer_history")
-    inventory:Mapped[Inventory] = relationship(back_populates="transfer_history")
 # -----------------------------------------------------------------------------------------------------

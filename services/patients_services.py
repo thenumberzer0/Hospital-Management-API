@@ -1,5 +1,5 @@
 from models import Patients, Insurance, PatientFamily, SpecialDetails, Appointments
-from schema import (
+from schema.patients_schema import (
     create_patients, update_patients, create_insurance, create_Family, update_family, update_insurance,
     create_special_details, update_special_details, create_appointment, update_appointment,
 )
@@ -19,7 +19,7 @@ def get_patients(db: Session, patient_name: str | None = None, age: int | None =
                       insurance_id=insurance_id, family_name=family_name, hmo_name=hmo_name)
 
 
-def create_patients(db: Session, patient: create_patients):
+def create_patient(db: Session, patient: create_patients):
     new_patient = Patients(
         name=patient.name,
         doB=patient.doB,
@@ -111,8 +111,8 @@ def delete_special_details(db: Session, special_id: PyUUID):
 # Appointments
 
 def get_appointments(db: Session, appointment_id: PyUUID | None = None, patient_id: PyUUID | None = None,
-                      doctor_id: PyUUID | None = None, day_time: datetime | None = None):
-    return db_search_appointments(db, appointment_id=appointment_id, patient_id=patient_id, doctor_id=doctor_id,
+                      worker_id: PyUUID | None = None, day_time: datetime | None = None):
+    return db_search_appointments(db, appointment_id=appointment_id, patient_id=patient_id, worker_id=worker_id,
                                    day_time=day_time)
 
 
@@ -120,7 +120,8 @@ def create_appointment(db: Session, appointment: create_appointment):
     new_appointment = Appointments(
         patient_id=appointment.patient_id,
         day_time=appointment.day_time,
-        doctor_id=appointment.doctor_id,
+        worker_id=appointment.worker_id,
+        notes = appointment.notes
     )
     db_add(db, new_appointment)
     return {"Message": "Appointment Booked", "id": new_appointment.id}

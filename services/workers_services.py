@@ -155,9 +155,6 @@ def delete_record(db: Session, record_id: PyUUID):
 
 
 # -----------------------------------------------------------------------------------------------------
-# Combined vitals/records lookup by unknown id — kept for backward compatibility
-# with the original /work endpoints; prefer get_records/get_vitals above for
-# type-specific access.
 
 def get_worker_Work(db: Session, worker_id: PyUUID):
     return _get_worker_Work_repo(db, worker_id)

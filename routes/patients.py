@@ -3,10 +3,9 @@ from sqlalchemy.orm import Session
 from uuid import UUID as PyUUID
 from datetime import datetime
 from database import get_db
-from dependencies import get_currentUser
-from schema import create_patients as create_patients_schema
-from schema import (
-    update_patients, create_Family, create_insurance, update_insurance, update_family,
+from dependencies import get_currentUser,require_permissions
+from schema.patients_schema import (
+   create_patients, update_patients, create_Family, create_insurance, update_insurance, update_family,
     create_special_details, update_special_details, create_appointment, update_appointment,
 )
 import services.patients_services as patient_services
@@ -15,14 +14,14 @@ patient_router = APIRouter()
 
 
 @patient_router.post("/", status_code=status.HTTP_202_ACCEPTED)
-def create_patient(patient: create_patients_schema, db: Session = Depends(get_db)):
-    return patient_services.create_patients(db, patient)
+def create_patients(patient: create_patients, db: Session = Depends(get_db),currentUser=Depends(get_currentUser)):
+    return patient_services.create_patient(db, patient)
 
 
 @patient_router.get("/", status_code=status.HTTP_200_OK)
 def get_patients(db: Session = Depends(get_db), patient_name: str | None = None, age: int | None = None,
                   patient_id: PyUUID | None = None, family_id: PyUUID | None = None, insurance_id: PyUUID | None = None,
-                  family_name: str | None = None, hmo_name: str | None = None):
+                  family_name: str | None = None, hmo_name: str | None = None,currentUser=Depends(get_currentUser)):
     return patient_services.get_patients(db, patient_name=patient_name, patient_id=patient_id, age=age,
                                           family_id=family_id, insurance_id=insurance_id, family_name=family_name,
                                           hmo_name=hmo_name)
@@ -47,13 +46,13 @@ def create_group(group: create_insurance | create_Family, db: Session = Depends(
 
 @patient_router.get("/group", status_code=status.HTTP_200_OK)
 def get_groups(select_group: bool, db: Session = Depends(get_db), group_name: str | None = None,
-                group_id: PyUUID | None = None):
+                group_id: PyUUID | None = None,currentUser=Depends(get_currentUser)):
     return patient_services.get_groups(db, select_group, group_name, group_id)
 
 
 @patient_router.patch("/group", status_code=status.HTTP_202_ACCEPTED)
 def update_group(updates: update_family | update_insurance, select_group: bool, group_name: str | None = None,
-                  group_id: PyUUID | None = None, db: Session = Depends(get_db), currentUser=Depends(get_currentUser)):
+                  group_id: PyUUID | None = None, db: Session = Depends(get_db), currentUser=Depends(require_permissions(["groups.update"]))):
     return patient_services.update_group(db, updates, select_group, group_name, group_id)
 
 
@@ -64,7 +63,6 @@ def delete_group(select_group: bool, group_name: str | None = None, group_id: Py
 
 
 # -----------------------------------------------------------------------------------------------------
-# Allergies / special-care notes (SpecialDetails)
 
 @patient_router.post("/allergies", status_code=status.HTTP_202_ACCEPTED)
 def create_allergy(item: create_special_details, db: Session = Depends(get_db), currentUser=Depends(get_currentUser)):
@@ -72,7 +70,7 @@ def create_allergy(item: create_special_details, db: Session = Depends(get_db), 
 
 
 @patient_router.get("/allergies", status_code=status.HTTP_200_OK)
-def get_allergies(db: Session = Depends(get_db), special_id: PyUUID | None = None, patient_id: PyUUID | None = None):
+def get_allergies(db: Session = Depends(get_db), special_id: PyUUID | None = None, patient_id: PyUUID | None = None,currentUser=Depends(get_currentUser)):
     return patient_services.get_special_details(db, special_id=special_id, patient_id=patient_id)
 
 
@@ -98,10 +96,10 @@ def create_appointment_route(appointment: create_appointment, db: Session = Depe
 
 @patient_router.get("/appointments", status_code=status.HTTP_200_OK)
 def get_appointments(db: Session = Depends(get_db), appointment_id: PyUUID | None = None,
-                      patient_id: PyUUID | None = None, doctor_id: PyUUID | None = None,
-                      day_time: datetime | None = None):
+                      patient_id: PyUUID | None = None, worker_id: PyUUID | None = None,
+                      day_time: datetime | None = None,currentUser=Depends(get_currentUser)):
     return patient_services.get_appointments(db, appointment_id=appointment_id, patient_id=patient_id,
-                                              doctor_id=doctor_id, day_time=day_time)
+                                              worker_id=worker_id, day_time=day_time)
 
 
 @patient_router.patch("/appointments", status_code=status.HTTP_202_ACCEPTED)

@@ -2,10 +2,9 @@ from fastapi import Depends, APIRouter, status
 from database import get_db
 from sqlalchemy.orm import Session
 from dependencies import get_currentUser, require_permissions
-from schema import create_workers as create_workers_schema
-from schema import (
-    update_workers, create_vitals, update_vitals, create_records, update_records, schedule_manage,
-    login_worker, schedule_update, create_offense, update_offense, create_permission, update_permission,
+from schema.worker_schema import (
+    create_workers,update_workers, create_vitals, update_vitals, create_records, update_records, schedule_manage,
+    login_worker, schedule_update, create_offense, update_offense, create_permission, update_permission,return_worker
 )
 from uuid import UUID as PyUUID
 import services.workers_services as worker_services
@@ -18,14 +17,18 @@ worker_router = APIRouter()
 def login(worker: login_worker, db: Session = Depends(get_db)):
     return worker_services.login_user(db, user=worker)
 
-
 @worker_router.post("/", status_code=status.HTTP_201_CREATED)
-def create_worker(worker: create_workers_schema, db: Session = Depends(get_db)):
+def create_worker(worker: create_workers, db: Session = Depends(get_db)):
     return worker_services.create_workers(db, worker)
 
+#1 worker
+@worker_router.get("/{worker_id}", status_code=status.HTTP_200_OK,response_model=return_worker)
+def get_workers(worker_id: PyUUID,db: Session = Depends(get_db),  currentUser=Depends(require_permissions(["workers.read"])),):
+    return worker_services.get_workers(db, worker_id)
 
-@worker_router.get("/", status_code=status.HTTP_200_OK)
-def get_workers(db: Session = Depends(get_db), worker_id: PyUUID | None = None, worker_name: str | None = None,
+#search, multiple workers
+@worker_router.get("/", status_code=status.HTTP_200_OK,response_model=list[return_worker])
+def get_workers(db: Session = Depends(get_db), worker_id= None, worker_name: str | None = None,
                  role: str | None = None,location_id: PyUUID | None = None, currentUser=Depends(require_permissions(["workers.read"]))):
     return worker_services.get_workers(db, worker_id, worker_name, role,location_id)
 
@@ -46,7 +49,7 @@ def delete_worker(worker_id: PyUUID, db: Session = Depends(get_db),
 # Vitals
 
 @worker_router.post("/vitals", status_code=status.HTTP_202_ACCEPTED)
-def submit_vitals(work: create_vitals, currentUser=Depends(get_currentUser), db: Session = Depends(get_db)):
+def submit_vitals(work: create_vitals, currentUser=Depends(require_permissions(["vitals.create"])), db: Session = Depends(get_db)):
     return worker_services.submit_vitals(db, work, currentUser.id)
 
 
@@ -57,7 +60,7 @@ def get_vitals(db: Session = Depends(get_db),currentUser=Depends(get_currentUser
 
 
 @worker_router.delete("/vitals", status_code=status.HTTP_204_NO_CONTENT)
-def delete_vitals_entry(vitals_id: PyUUID, db: Session = Depends(get_db), currentUser=Depends(get_currentUser)):
+def delete_vitals_entry(vitals_id: PyUUID, db: Session = Depends(get_db), currentUser=Depends(require_permissions(["vitals.delete"]))):
     worker_services.delete_vitals_entry(db, vitals_id)
 
 
@@ -66,30 +69,29 @@ def delete_vitals_entry(vitals_id: PyUUID, db: Session = Depends(get_db), curren
 
 @worker_router.post("/records", status_code=status.HTTP_202_ACCEPTED)
 def submit_records(work: create_records, vitals_id: PyUUID, db: Session = Depends(get_db),
-                    currentUser=Depends(get_currentUser)):
+                    currentUser=Depends(require_permissions(["records.create"]))):
     return worker_services.submit_Records(db, currentUser.id, work, vitals_id)
 
 
 @worker_router.get("/records", status_code=status.HTTP_200_OK)
 def get_records(db: Session = Depends(get_db), record_id: PyUUID | None = None, patient_id: PyUUID | None = None,
-                 worker_id: PyUUID | None = None):
+                 worker_id: PyUUID | None = None,currentUser=Depends(get_currentUser)):
     return worker_services.get_records(db, record_id=record_id, patient_id=patient_id, worker_id=worker_id)
 
 
 @worker_router.patch("/records", status_code=status.HTTP_202_ACCEPTED)
 def update_record(record_id: PyUUID, updates: update_records, db: Session = Depends(get_db),
-                   currentUser=Depends(get_currentUser)):
+                   currentUser=Depends(require_permissions(["records.update"]))):
     return worker_services.update_record(db, record_id, updates)
 
 
 @worker_router.delete("/records", status_code=status.HTTP_204_NO_CONTENT)
-def delete_record(record_id: PyUUID, db: Session = Depends(get_db), currentUser=Depends(get_currentUser)):
+def delete_record(record_id: PyUUID, db: Session = Depends(get_db), currentUser=Depends(require_permissions(["records.delete"]))):
     worker_services.delete_record(db, record_id)
 
 
 # -----------------------------------------------------------------------------------------------------
-# Combined vitals/records lookup by unknown id — kept for backward compatibility.
-# Prefer the type-specific /records and /vitals endpoints above.
+
 
 @worker_router.get("/work", status_code=status.HTTP_200_OK)
 def retrieve_work(worker_id: PyUUID, db: Session = Depends(get_db)):
@@ -154,7 +156,7 @@ def delete_offense(offense_id: PyUUID, db: Session = Depends(get_db),
 
 
 # -----------------------------------------------------------------------------------------------------
-# Permissions (admin-only role -> permission-string mapping)
+
 
 @worker_router.post("/permissions", status_code=status.HTTP_202_ACCEPTED)
 def create_permission(permission: create_permission, db: Session = Depends(get_db),

@@ -24,6 +24,12 @@ class login_worker(BaseModel):
     name: str
     password: str
 
+class return_worker(BaseModel):
+    name: str
+    role: Roles
+    gender:Gender
+    location_id:PyUUID
+
 
 class update_workers(BaseModel):
     name: Optional[str] = None
@@ -31,21 +37,6 @@ class update_workers(BaseModel):
     password: Optional[str] = None
     gender:Optional[Gender]= None
     location_id:Optional[PyUUID] = None
-
-class create_insurance(BaseModel):
-    hmo_name: str
-
-
-class create_Family(BaseModel):
-    family_name: str
-
-
-class update_family(BaseModel):
-    family_name: Optional[str] = None
-
-
-class update_insurance(BaseModel):
-    hmo_name: Optional[str] = None
 
 # -----------------------------------------------------------------------------------------------------
 
@@ -70,7 +61,6 @@ class create_records(BaseModel):
 
 
 class update_records(BaseModel):
-    date: Optional[datetime] = None
     diagnosis: Optional[str] = None
 
 

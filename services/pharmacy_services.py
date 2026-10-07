@@ -1,6 +1,6 @@
 from models import DrugMaster, DrugsUsed, Batches,DrugType,DrugGroup,Location,Supplier,OtherDrugHistory,Inventory,DrugTransferHistory
 from fastapi import HTTPException
-from schema.pharmacy_schema import create_pharmacy_items,create_batches,create_drugs_used,create_drug_group,create_drug_type,create_drugs_other_used,create_locations,create_suppliers,update_pharmacy_items, update_batches,transfer_drugs
+from schema.pharmacy_schema import create_pharmacy_items,create_batches,create_drugs_used,create_drug_group,create_drug_type,create_drugs_other_used,create_locations,create_suppliers,update_pharmacy_items, transfer_drugs
 from sqlalchemy.orm import Session
 from uuid import UUID as PyUUID
 from repos.pharmacy_repo import db_add, db_delete, drug_history,drug_other_history, db_batch_search, db_pharm_search,search_drug_group,search_drug_type,search_location,search_supplier,db_inventory_search
@@ -181,9 +181,9 @@ def create_used_drugs(db: Session, drug_used: create_drugs_used):
 
 def delete_used_drug(db: Session, usage_id: PyUUID):
     drug_usage = drug_history(db, usage_id)
-    batch = drug_usage.batch
-    batch.quantity += drug_usage.quantity
-    db_add(db, batch)
+    inventory = drug_usage.inventory
+    inventory.quantity += drug_usage.quantity
+    db_add(db, inventory)
     db_delete(db, drug_usage)
     return {"Message": "Usage Deleted"}
 
@@ -196,7 +196,7 @@ def get_other_used_drugs(db: Session, inventory_id: PyUUID | None = None, usage_
     return drug_other_history(db, inventory_id,usage_id)
 
 
-def create_other_used_drugs(db: Session, other_drug_used: create_drugs_other_used):
+def create_other_used_drugs(db: Session, other_drug_used: create_drugs_other_used,worker_id):
     inventory = db_inventory_search(db, inventory_id=other_drug_used.inventory_id)
     new_quantity = inventory.quantity - other_drug_used.quantity
     if new_quantity < 0:
@@ -205,20 +205,21 @@ def create_other_used_drugs(db: Session, other_drug_used: create_drugs_other_use
         quantity=other_drug_used.quantity,
         inventory_id=inventory.id,
         date=other_drug_used.date,
-        memo=other_drug_used.memo
+        memo=other_drug_used.memo,
+        worker_id = worker_id
     )
     db_add(db, inventory)
     db_add(db, used_drug)
-    return {"Message": f"Drug used: {inventory.pharmacy.name}", "quantity": other_drug_used.quantity, "id": other_drug_used.id}
+    return {"Message": f"Drug used: {inventory.batch.pharmacy.name}", "quantity": other_drug_used.quantity, "id": used_drug.id}
 
 
 
 
 def delete_other_used_drug(db: Session, usage_id: PyUUID):
     drug_usage = drug_other_history(db, usage_id)
-    batch = drug_usage.batch
-    batch.quantity += drug_usage.quantity
-    db_add(db, batch)
+    inventory = drug_usage.inventory
+    inventory.quantity += drug_usage.quantity
+    db_add(db, inventory)
     db_delete(db, drug_usage)
     return {"Message": "Usage Deleted"}
 

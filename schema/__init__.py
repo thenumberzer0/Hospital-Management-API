@@ -3,10 +3,6 @@ from .worker_schema import (
     create_workers,
     login_worker,
     update_workers,
-    create_insurance,
-    create_Family,
-    update_family,
-    update_insurance,
     schedule_manage,
     schedule_update,
     create_records,
@@ -25,6 +21,10 @@ from .patients_schema import (
     update_special_details,
     create_appointment,
     update_appointment,
+    create_insurance,
+    create_Family,
+    update_family,
+    update_insurance,
 )
 from .pharmacy_schema import (
     create_pharmacy_items,
@@ -32,7 +32,6 @@ from .pharmacy_schema import (
     create_batches,
     update_batches,
     create_drugs_used,
-    update_drugs_used,
 )
 
 __all__ = [
@@ -65,5 +64,4 @@ __all__ = [
     "create_batches",
     "update_batches",
     "create_drugs_used",
-    "update_drugs_used",
 ]

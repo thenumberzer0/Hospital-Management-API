@@ -25,8 +25,6 @@ class update_patients(BaseModel):
 
 
 # -----------------------------------------------------------------------------------------------------
-# SpecialDetails: patient allergy / special-care notes
-
 
 class create_special_details(BaseModel):
     patient_id: PyUUID
@@ -44,9 +42,28 @@ class update_special_details(BaseModel):
 class create_appointment(BaseModel):
     patient_id: PyUUID
     day_time: datetime
-    doctor_id: Optional[PyUUID] = None
+    worker_id: Optional[PyUUID] = None
+    notes:str
 
 
 class update_appointment(BaseModel):
     day_time: Optional[datetime] = None
-    doctor_id: Optional[PyUUID] = None
+    worker_id: Optional[PyUUID] = None
+
+
+class create_insurance(BaseModel):
+    hmo_name: str
+
+
+class create_Family(BaseModel):
+    family_name: str
+
+
+class update_family(BaseModel):
+    family_name: str
+
+
+class update_insurance(BaseModel):
+    hmo_name: str 
+
+
