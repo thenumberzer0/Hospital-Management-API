@@ -49,6 +49,7 @@ class create_appointment(BaseModel):
 class update_appointment(BaseModel):
     day_time: Optional[datetime] = None
     worker_id: Optional[PyUUID] = None
+    notes:Optional[str] = None
 
 
 class create_insurance(BaseModel):

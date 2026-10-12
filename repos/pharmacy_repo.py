@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models  import DrugMaster, DrugsUsed, Batches, Record,OtherDrugHistory, DrugGroup,DrugType,Supplier,Location, Inventory, DrugTransferHistory
+from models  import DrugMaster, DrugsUsed, Batches, Record,OtherDrugHistory, DrugGroup,DrugType,Supplier,Location, Inventory, Drug_TransferHistory,DrugLocation_TransferHistory
 from fastapi import HTTPException
 from uuid import UUID as PyUUID
 from sqlalchemy import select
@@ -10,7 +10,7 @@ from sqlalchemy import select
 
 def db_inventory_search(db: Session,inventory_id:PyUUID|None=None,location_id:PyUUID|None=None,batch_id:PyUUID|None=None):
     if inventory_id:
-        inventory = db.execute(select(Inventory).where(Inventory.id == inventory_id)).scalars().first()
+        inventory = db.execute(select(Inventory).where(Inventory.id == inventory_id).with_for_update()).scalars().first()
         if not inventory:
                 raise HTTPException(404, "Item not Found")
         return inventory
@@ -20,9 +20,10 @@ def db_inventory_search(db: Session,inventory_id:PyUUID|None=None,location_id:Py
         stmt = stmt.where(Inventory.batch_id==batch_id)
     if(location_id):
         stmt = stmt.where(Inventory.location_id==location_id)
+    stmt = stmt.order_by(Inventory.quantity.asc())
     return db.execute(stmt).scalars().all()
 
-def db_pharm_search(db: Session, drug_name: str | None = None, drug_id: PyUUID | None = None, batch_no: int | None = None):
+def db_pharm_search(db: Session, drug_name: str | None = None, drug_id: PyUUID | None = None):
     if drug_id:
         drug = db.execute(select(DrugMaster).where(DrugMaster.id == drug_id)).scalars().first()
         if not drug:
@@ -41,13 +42,13 @@ def db_batch_search(db: Session, drug_name: str | None = None, drug_id: PyUUID |
             raise HTTPException(404, "Item not Found")
         return batch
 
-    stmt = select(Batches,DrugMaster)
+    stmt = select(Batches)
     if drug_id:
-        stmt = stmt.where(Batches.drug_id == drug_id)
+        stmt = stmt.where(Batches.pharmacy_id == drug_id)
     if drug_name:
         stmt = stmt.where(Batches.pharmacy.has(DrugMaster.name.ilike(f"%{drug_name}%")))
 
-    stmt = stmt.order_by(Batches.expiry_date.asc(), Batches.quantity.asc())
+    stmt = stmt.order_by(Batches.expiry_date.asc())
     return db.execute(stmt).mappings().all()
 
 
@@ -127,7 +128,7 @@ def search_location(db:Session,location_id:PyUUID|None=None):
 
     
     
-def db_add(db: Session, item: DrugMaster | DrugsUsed | Batches|OtherDrugHistory|DrugType|DrugGroup|Inventory|DrugTransferHistory):
+def db_add(db: Session, item: DrugMaster | DrugsUsed | Batches|OtherDrugHistory|DrugType|DrugGroup|Inventory|Drug_TransferHistory|DrugLocation_TransferHistory):
     try:
         db.add(item)
         db.commit()

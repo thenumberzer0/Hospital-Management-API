@@ -51,15 +51,15 @@ def get_groups(select_group: bool, db: Session = Depends(get_db), group_name: st
 
 
 @patient_router.patch("/group", status_code=status.HTTP_202_ACCEPTED)
-def update_group(updates: update_family | update_insurance, select_group: bool, group_name: str | None = None,
+def update_group(updates: update_family | update_insurance, select_group: bool, 
                   group_id: PyUUID | None = None, db: Session = Depends(get_db), currentUser=Depends(require_permissions(["groups.update"]))):
-    return patient_services.update_group(db, updates, select_group, group_name, group_id)
+    return patient_services.update_group(db, updates, select_group,group_id=group_id)
 
 
 @patient_router.delete("/group", status_code=status.HTTP_204_NO_CONTENT)
-def delete_group(select_group: bool, group_name: str | None = None, group_id: PyUUID | None = None,
+def delete_group(select_group: bool, group_id: PyUUID | None = None,
                   db: Session = Depends(get_db), currentUser=Depends(get_currentUser)):
-    patient_services.delete_group(db, select_group, group_name, group_id)
+    patient_services.delete_group(db, select_group,group_id= group_id)
 
 
 # -----------------------------------------------------------------------------------------------------

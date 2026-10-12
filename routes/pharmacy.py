@@ -1,6 +1,6 @@
 from fastapi import Depends, APIRouter, status
 from database import get_db
-from schema.pharmacy_schema import create_pharmacy_items,create_batches,create_drugs_used,create_drug_group,create_drug_type,create_drugs_other_used,create_locations,create_suppliers,update_pharmacy_items, transfer_drugs
+from schema.pharmacy_schema import create_pharmacy_items,create_batches,create_drugs_used,create_drug_group,create_drug_type,create_drugs_other_used,create_locations,create_suppliers,update_pharmacy_items,transfer_loc_drugs,transfer_other_inventory
 from sqlalchemy.orm import Session
 from dependencies import get_currentUser,require_permissions
 from uuid import UUID as PyUUID
@@ -13,8 +13,8 @@ pharmacy_router = APIRouter()
 
 @pharmacy_router.get("/", status_code=status.HTTP_200_OK)
 def get_drugs(db: Session = Depends(get_db), drug_name: str | None = None, drug_id: PyUUID | None = None,
-              batch_no: int | None = None,currentUser=Depends(get_currentUser)):
-    return pharmacy_services.get_drugs(db, drug_name, drug_id, batch_no)
+              currentUser=Depends(get_currentUser)):
+    return pharmacy_services.get_drugs(db, drug_name, drug_id)
 
 
 @pharmacy_router.post("/", status_code=status.HTTP_202_ACCEPTED)
@@ -59,7 +59,7 @@ def get_drug_type(db: Session = Depends(get_db),type_id:PyUUID|None=None,current
 
 @pharmacy_router.post("/type", status_code=status.HTTP_202_ACCEPTED)
 def create_drug_typef(new_type:create_drug_type,db: Session = Depends(get_db),currentUser=Depends(require_permissions(["drug_t.create"]))):
-    pharmacy_services.create_drug_type(db,new_type)
+    return  pharmacy_services.create_drug_type(db,new_type)
 
 @pharmacy_router.patch("/type", status_code=status.HTTP_202_ACCEPTED)
 def update_drug_type(updates:create_drug_type,type_id:PyUUID,db: Session = Depends(get_db),currentUser=Depends(require_permissions(["drug_t.update"]))):
@@ -172,12 +172,6 @@ def get_inventory_items(db: Session = Depends(get_db), inventory_id:PyUUID|None=
 
 
 
-
-
-
-
-
-
 @pharmacy_router.post("/transfer", status_code=status.HTTP_202_ACCEPTED)
-def drug_transfer(transfer_details:transfer_drugs,db: Session = Depends(get_db),currentUser=Depends(require_permissions(["drug.transfer"]))):
+def drug_transfer(transfer_details:transfer_loc_drugs|transfer_other_inventory,db: Session = Depends(get_db),currentUser=Depends(require_permissions(["drug.transfer"]))):
     pharmacy_services.inventory_location_transfer(db,transfer_details,currentUser.id)

@@ -4,6 +4,7 @@ from schema.patients_schema import (
     create_special_details, update_special_details, create_appointment, update_appointment,
 )
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from uuid import UUID as PyUUID
 from datetime import datetime
 from repos.patients_repo import (
@@ -65,8 +66,8 @@ def create_groups(db: Session, group: create_insurance | create_Family):
 
 
 def update_group(db: Session, updates: update_family | update_insurance, select_group: bool,
-                  group_name: str | None = None, group_id: PyUUID | None = None):
-    changed_group = get_groups(db, select_group, group_name, group_id)
+ group_id: PyUUID | None = None):
+    changed_group = get_groups(db, select_group,group_id=group_id)
     for key, value in updates.model_dump(exclude_unset=True).items():
         target_key = "name" if key in ("hmo_name", "family_name") else key
         setattr(changed_group, target_key, value)
@@ -74,8 +75,8 @@ def update_group(db: Session, updates: update_family | update_insurance, select_
     return {"Message": "Group Updated!"}
 
 
-def delete_group(db: Session, select_group: bool, group_name: str | None = None, group_id: PyUUID | None = None):
-    changed_group = get_groups(db, select_group, group_name, group_id)
+def delete_group(db: Session, select_group: bool, group_id: PyUUID | None = None):
+    changed_group = get_groups(db, select_group,group_id=group_id)
     db_delete(db, changed_group)
     return {"Message": "Group Deleted!"}
 
@@ -117,6 +118,11 @@ def get_appointments(db: Session, appointment_id: PyUUID | None = None, patient_
 
 
 def create_appointment(db: Session, appointment: create_appointment):
+    if datetime.now() > appointment.day_time:
+        raise HTTPException(400, "Day has passed already")
+    erorr_check = db_search_appointments(day_time=appointment.day_time,worker_id=appointment.worker_id)
+    if erorr_check:
+        raise HTTPException(400,"Worker already booked")
     new_appointment = Appointments(
         patient_id=appointment.patient_id,
         day_time=appointment.day_time,

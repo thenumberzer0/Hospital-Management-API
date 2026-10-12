@@ -19,7 +19,7 @@ def db_search(db: Session, patient_name: str | None = None, age: int | None = No
     if patient_name:
         stmt = stmt.where(Patients.name.ilike(f"%{patient_name}%"))
     if age:
-        stmt = stmt.where(Patients.doB-timedelta(days=age * 365.25) >=0).order_by(Patients.age)
+        stmt = stmt.where(Patients.doB-timedelta(days=age * 365.25) >=0).order_by(Patients.doB)
     if family_id:
         stmt = stmt.where(Patients.family_id == family_id)
     if insurance_id:
@@ -72,7 +72,7 @@ def db_search_special_details(db: Session, special_id: PyUUID | None = None, pat
 # Appointments
 
 def db_search_appointments(db: Session, appointment_id: PyUUID | None = None, patient_id: PyUUID | None = None,
-                            doctor_id: PyUUID | None = None, day_time: datetime | None = None):
+                            worker_id: PyUUID | None = None, day_time: datetime | None = None):
     if appointment_id:
         item = db.execute(select(Appointments).where(Appointments.id == appointment_id)).scalars().first()
         if not item:
@@ -82,8 +82,8 @@ def db_search_appointments(db: Session, appointment_id: PyUUID | None = None, pa
     stmt = select(Appointments)
     if patient_id:
         stmt = stmt.where(Appointments.patient_id == patient_id)
-    if doctor_id:
-        stmt = stmt.where(Appointments.doctor_id == doctor_id)
+    if worker_id:
+        stmt = stmt.where(Appointments.worker_id == worker_id)
     if day_time:
         stmt = stmt.where(Appointments.day_time == day_time)
     return db.execute(stmt.order_by(Appointments.day_time.asc())).scalars().all()

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import Workers, Record, Vitals, Schedule, Offenses, Permissions
+from models import Workers, Record, Vitals, Schedule, Offenses, Permissions,Roles
 from fastapi import HTTPException
 from uuid import UUID as PyUUID
 from sqlalchemy import select
@@ -48,17 +48,12 @@ def get_worker_Work(db: Session, worker_id: PyUUID):
     if not worker:
         raise HTTPException(404, "User not Found")
 
-    if worker.role == "nurse":
+    if worker.role == Roles.NURSE:
         return worker.vitals
     return worker.records
 
 
 def gamble_workSearch(db: Session, work_id: PyUUID):
-    """Look up an item of unknown type (Vitals or Record) by id.
-
-    Used by the generic /work endpoints. For type-specific lookups prefer
-    db_search_records / db_search_vitals below.
-    """
     vitals = db.execute(select(Vitals).where(Vitals.id == work_id)).scalars().first()
     if vitals:
         return vitals
@@ -82,7 +77,7 @@ def get_aschedule(db: Session, worker_id: PyUUID | None = None, dt: datetime | N
     return db.execute(stmt).scalars().all()
 
 
-# Records (explicit, id-based access — complements the role-based get_worker_Work above)
+
 
 def db_search_records(db: Session, record_id: PyUUID | None = None, patient_id: PyUUID | None = None,
                        worker_id: PyUUID | None = None):

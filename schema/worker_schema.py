@@ -25,6 +25,7 @@ class login_worker(BaseModel):
     password: str
 
 class return_worker(BaseModel):
+    id:PyUUID
     name: str
     role: Roles
     gender:Gender
@@ -69,6 +70,7 @@ class create_vitals(BaseModel):
     heart: float
     systolic_pressure: int
     diastolic_pressure: int
+    patient_id: PyUUID
 
 
 class update_vitals(BaseModel):

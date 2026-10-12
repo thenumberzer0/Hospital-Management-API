@@ -6,12 +6,10 @@ from pydantic import BaseModel
 class create_pharmacy_items(BaseModel):
     name: str
     drug_code: str
-    drug_groupid:PyUUID
 
 class update_pharmacy_items(BaseModel):
     name: Optional[str] = None
     drug_code:Optional[str]= None
-    drug_groupid:Optional[PyUUID]= None
 
 class create_drug_group(BaseModel):
     name:str
@@ -27,7 +25,6 @@ class create_suppliers(BaseModel):
    
 class create_batches(BaseModel):
     bulk_quantity:int
-    alert_level:int
     conversion_rate:int
     batch_number: str
     expiry_date: datetime
@@ -35,6 +32,7 @@ class create_batches(BaseModel):
     location_id:PyUUID
     pharmacy_id: PyUUID
     drug_group_id:PyUUID
+
     
     
 class update_batches(BaseModel):
@@ -55,8 +53,16 @@ class create_drugs_other_used(BaseModel):
     date:datetime
     inventory_id:PyUUID
 
-class transfer_drugs(BaseModel):
+class transfer_loc_drugs(BaseModel):
     inventory_id:PyUUID
     new_location_id:PyUUID
     new_quantity:int
     date:datetime
+
+class transfer_other_inventory(BaseModel):
+    inventory_id:PyUUID
+    other_invetory_id:PyUUID
+    new_quantity:int
+    date:datetime
+
+    

@@ -7,7 +7,7 @@ from models import Workers, Record, Vitals, Schedule, Permissions, Offenses
 from fastapi import HTTPException, Response
 from auth import hash_password, verify_password, create_access_token
 from schema import (
-    create_workers, update_workers, create_vitals, update_vitals, create_records, update_records,
+    create_workers, update_workers, create_vitals, create_records, update_records,
     schedule_manage, login_worker, schedule_update, create_offense, update_offense,
     create_permission, update_permission,
 )
@@ -75,11 +75,7 @@ def delete_worker(db: Session, worker_id: PyUUID):
 
 
 # -----------------------------------------------------------------------------------------------------
-# Vitals
-    temp: float
-    heart: float
-    systolic_pressure: int
-    diastolic_pressure: int
+
 
 def submit_vitals(db: Session, work: create_vitals, user: PyUUID):
     vitals = Vitals(
@@ -87,7 +83,8 @@ def submit_vitals(db: Session, work: create_vitals, user: PyUUID):
         heart=work.heart,
         systolic_pressure=work.systolic_pressure,
         diastolic_pressure=work.diastolic_pressure,
-        worker_id=user
+        worker_id=user,
+        patient_id = work.patient_id
     )
     db_add(db, vitals)
     return {"Message": "Vitals uploaded", "vitals_id": vitals.id}
@@ -96,14 +93,6 @@ def submit_vitals(db: Session, work: create_vitals, user: PyUUID):
 def get_vitals(db: Session, vitals_id: PyUUID | None = None, worker_id: PyUUID | None = None,
                 record_id: PyUUID | None = None):
     return db_search_vitals(db, vitals_id=vitals_id, worker_id=worker_id, record_id=record_id)
-
-
-def update_vitals_entry(db: Session, vitals_id: PyUUID, updates: update_vitals):
-    changed_vitals = db_search_vitals(db, vitals_id=vitals_id)
-    for key, value in updates.model_dump(exclude_unset=True).items():
-        setattr(changed_vitals, key, value)
-    db_add(db, changed_vitals)
-    return {"Message": "Vitals Updated!"}
 
 
 def delete_vitals_entry(db: Session, vitals_id: PyUUID):
@@ -124,11 +113,14 @@ def submit_Records(db: Session, user: PyUUID, work: create_records, vitals_id: P
     )
     db_add(db, record)
 
-    # Record has no vitals_id column — Vitals points at Record instead, so
-    # link the already-submitted vitals row to the new record here.
+   
     vitals = db.execute(select(Vitals).where(Vitals.id == vitals_id)).scalars().first()
     if not vitals:
         raise HTTPException(404, "Vitals not found")
+    if vitals.record_id:
+        raise HTTPException(400, "Vitals already has record")
+    if not vitals.patient_id == record.patient_id:
+        raise HTTPException(400, "Not same patient")
     vitals.record_id = record.id
     db_add(db, vitals)
 

@@ -21,16 +21,15 @@ def login(worker: login_worker, db: Session = Depends(get_db)):
 def create_worker(worker: create_workers, db: Session = Depends(get_db)):
     return worker_services.create_workers(db, worker)
 
-#1 worker
-@worker_router.get("/{worker_id}", status_code=status.HTTP_200_OK,response_model=return_worker)
+@worker_router.get("worker/{worker_id}", status_code=status.HTTP_200_OK,response_model=return_worker)
 def get_workers(worker_id: PyUUID,db: Session = Depends(get_db),  currentUser=Depends(require_permissions(["workers.read"])),):
     return worker_services.get_workers(db, worker_id)
 
 #search, multiple workers
 @worker_router.get("/", status_code=status.HTTP_200_OK,response_model=list[return_worker])
-def get_workers(db: Session = Depends(get_db), worker_id= None, worker_name: str | None = None,
+def get_workers(db: Session = Depends(get_db),  worker_name: str | None = None,
                  role: str | None = None,location_id: PyUUID | None = None, currentUser=Depends(require_permissions(["workers.read"]))):
-    return worker_services.get_workers(db, worker_id, worker_name, role,location_id)
+    return worker_services.get_workers(db,worker_name= worker_name,role= role,location_id=location_id)
 
 
 @worker_router.patch("/", status_code=status.HTTP_202_ACCEPTED)
